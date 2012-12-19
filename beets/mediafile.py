@@ -41,6 +41,7 @@ import imghdr
 import os
 import logging
 import traceback
+import charade
 from beets.util.enumeration import enum
 
 __all__ = ['UnreadableFileError', 'FileTypeError', 'MediaFile']
@@ -422,7 +423,22 @@ class MediaField(object):
                     isinstance(out, str):
                 out = out.decode('utf8')
 
-        return _safe_cast(self.out_type, out)
+        return _safe_cast(self.out_type, self._convert_encoding(out))
+
+    def _convert_encoding(self, str):
+        try:
+            encoded = str.encode("iso-8859-1")
+        except UnicodeEncodeError:
+            # Encoding is determined correctly by Mutagen
+            return str
+
+        charset = charade.detect(encoded)
+
+        try:
+            return encoded.decode(charset['encoding'])
+        except (UnicodeDecodeError, # Encoding is determined incorrectly by Chardet
+                LookupError):       # Encoding determined by Chardet is not found
+            return str
 
     def __set__(self, obj, val):
         """Set the value of this metadata field.
