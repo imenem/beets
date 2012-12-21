@@ -71,6 +71,7 @@ setup(name='beets',
       },
 
       install_requires=[
+          'charade',
           'mutagen',
           'munkres',
           'unidecode',
