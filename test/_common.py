@@ -97,6 +97,9 @@ def iconfig(lib, **kwargs):
         ignore = [],
         resolve_duplicate_func = lambda x, y: None,
         per_disc_numbering = False,
+        strong_rec_thresh = None,
+        medium_rec_thresh = None,
+        rec_gap_thresh = None
     )
     for k, v in kwargs.items():
         setattr(config, k, v)

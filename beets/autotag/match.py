@@ -25,6 +25,7 @@ from unidecode import unidecode
 from beets import plugins
 from beets.util import levenshtein, plurality
 from beets.autotag import hooks
+from beets.ui import config_val
 
 # Distance parameters.
 # Text distance weights: proportions on the normalized intuitive edit
@@ -328,7 +329,7 @@ def match_by_id(items):
     # other IDs (i.e., track and artist) in case the album tag isn't
     # present, but that event seems very unlikely.
 
-def recommendation(results):
+def recommendation(config, results):
     """Given a sorted list of AlbumMatch or TrackMatch objects, return a
     recommendation flag (RECOMMEND_STRONG, RECOMMEND_MEDIUM,
     RECOMMEND_NONE) based on the results' distances.
@@ -338,16 +339,16 @@ def recommendation(results):
         rec = RECOMMEND_NONE
     else:
         min_dist = results[0].distance
-        if min_dist < STRONG_REC_THRESH:
+        if min_dist < config.strong_rec_thresh:
             # Strong recommendation level.
             rec = RECOMMEND_STRONG
         elif len(results) == 1:
             # Only a single candidate. Medium recommendation.
             rec = RECOMMEND_MEDIUM
-        elif min_dist <= MEDIUM_REC_THRESH:
+        elif min_dist <= config.medium_rec_thresh:
             # Medium recommendation level.
             rec = RECOMMEND_MEDIUM
-        elif results[1].distance - min_dist >= REC_GAP_THRESH:
+        elif results[1].distance - min_dist >= config.rec_gap_thresh:
             # Gap between first two candidates is large.
             rec = RECOMMEND_MEDIUM
         else:
@@ -378,7 +379,7 @@ def _add_candidate(items, results, info):
     results[info.album_id] = hooks.AlbumMatch(dist, info, mapping,
                                               extra_items, extra_tracks)
 
-def tag_album(items, timid=False, search_artist=None, search_album=None,
+def tag_album(config, items, timid=False, search_artist=None, search_album=None,
               search_id=None):
     """Bundles together the functionality used to infer tags for a
     set of items comprised by an album. Returns everything relevant:
@@ -410,7 +411,7 @@ def tag_album(items, timid=False, search_artist=None, search_album=None,
         id_info = match_by_id(items)
     if id_info:
         _add_candidate(items, candidates, id_info)
-        rec = recommendation(candidates.values())
+        rec = recommendation(config, candidates.values())
         log.debug('Album ID match recommendation is ' + str(rec))
         if candidates and not timid:
             # If we have a very good MBID match, return immediately.
@@ -448,10 +449,10 @@ def tag_album(items, timid=False, search_artist=None, search_album=None,
 
     # Sort and get the recommendation.
     candidates = sorted(candidates.itervalues())
-    rec = recommendation(candidates)
+    rec = recommendation(config, candidates)
     return cur_artist, cur_album, candidates, rec
 
-def tag_item(item, timid=False, search_artist=None, search_title=None,
+def tag_item(config, item, timid=False, search_artist=None, search_title=None,
              search_id=None):
     """Attempts to find metadata for a single track. Returns a
     `(candidates, recommendation)` pair where `candidates` is a list of
@@ -473,7 +474,7 @@ def tag_item(item, timid=False, search_artist=None, search_title=None,
             candidates[track_info.track_id] = \
                     hooks.TrackMatch(dist, track_info)
             # If this is a good match, then don't keep searching.
-            rec = recommendation(candidates.values())
+            rec = recommendation(config, candidates.values())
             if rec == RECOMMEND_STRONG and not timid:
                 log.debug('Track ID match.')
                 return candidates.values(), rec
@@ -498,5 +499,5 @@ def tag_item(item, timid=False, search_artist=None, search_title=None,
     # Sort by distance and return with recommendation.
     log.debug('Found %i candidates.' % len(candidates))
     candidates = sorted(candidates.itervalues())
-    rec = recommendation(candidates)
+    rec = recommendation(config, candidates)
     return candidates, rec

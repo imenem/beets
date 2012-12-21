@@ -32,6 +32,7 @@ from beets import importer
 from beets.util import syspath, normpath, ancestry, displayable_path
 from beets.util.functemplate import Template
 from beets import library
+from beets.autotag import match
 
 # Global logger.
 log = logging.getLogger('beets')
@@ -124,21 +125,21 @@ PARTIAL_MATCH_MESSAGE = u'(partial match!)'
 
 # Importer utilities and support.
 
-def dist_string(dist, color):
+def dist_string(config, dist, color):
     """Formats a distance (a float) as a similarity percentage string.
     The string is colorized if color is True.
     """
     out = '%.1f%%' % ((1 - dist) * 100)
     if color:
-        if dist <= autotag.STRONG_REC_THRESH:
+        if dist <= config.strong_rec_thresh:
             out = ui.colorize('green', out)
-        elif dist <= autotag.MEDIUM_REC_THRESH:
+        elif dist <= config.medium_rec_thresh:
             out = ui.colorize('yellow', out)
         else:
             out = ui.colorize('red', out)
     return out
 
-def show_change(cur_artist, cur_album, match, color=True,
+def show_change(config, cur_artist, cur_album, match, color=True,
                 per_disc_numbering=False):
     """Print out a representation of the changes that will be made if an
     album's tags are changed according to `match`, which must be an AlbumMatch
@@ -206,7 +207,7 @@ def show_change(cur_artist, cur_album, match, color=True,
         print_(message)
 
     # Distance/similarity.
-    print_('(Similarity: %s)' % dist_string(match.distance, color))
+    print_('(Similarity: %s)' % dist_string(config, match.distance, color))
 
     # Tracks.
     pairs = match.mapping.items()
@@ -268,7 +269,7 @@ def show_change(cur_artist, cur_album, match, color=True,
             line = ui.colorize('yellow', line)
         print_(line)
 
-def show_item_change(item, match, color):
+def show_item_change(config, item, match, color):
     """Print out the change that would occur by tagging `item` with the
     metadata from `match`, a TrackMatch object.
     """
@@ -288,7 +289,7 @@ def show_item_change(item, match, color):
     else:
         print_("Tagging track: %s - %s" % (cur_artist, cur_title))
 
-    print_('(Similarity: %s)' % dist_string(match.distance, color))
+    print_('(Similarity: %s)' % dist_string(config, match.distance, color))
 
 def should_resume(config, path):
     return ui.input_yn("Import of the directory:\n%s"
@@ -306,7 +307,7 @@ def _quiet_fall_back(config):
         assert(False)
     return config.quiet_fallback
 
-def choose_candidate(candidates, singleton, rec, color, timid,
+def choose_candidate(config, candidates, singleton, rec, color, timid,
                      cur_artist=None, cur_album=None, item=None,
                      itemcount=None, per_disc_numbering=False):
     """Given a sorted list of candidates, ask the user for a selection
@@ -373,7 +374,7 @@ def choose_candidate(candidates, singleton, rec, color, timid,
                 for i, match in enumerate(candidates):
                     print_('%i. %s - %s (%s)' %
                            (i + 1, match.info.artist, match.info.title,
-                            dist_string(match.distance, color)))
+                            dist_string(config, match.distance, color)))
             else:
                 print_('Finding tags for album "%s - %s".' %
                        (cur_artist, cur_album))
@@ -395,7 +396,7 @@ def choose_candidate(candidates, singleton, rec, color, timid,
                     elif year:
                         line += u' [%s]' % year
 
-                    line += ' (%s)' % dist_string(match.distance, color)
+                    line += ' (%s)' % dist_string(config, match.distance, color)
 
                     # Point out the partial matches.
                     if match.extra_items or match.extra_tracks:
@@ -437,9 +438,9 @@ def choose_candidate(candidates, singleton, rec, color, timid,
 
         # Show what we're about to do.
         if singleton:
-            show_item_change(item, match, color)
+            show_item_change(config, item, match, color)
         else:
-            show_change(cur_artist, cur_album, match, color,
+            show_change(config, cur_artist, cur_album, match, color,
                         per_disc_numbering)
 
         # Exact match => tag automatically if we're not in timid mode.
@@ -509,7 +510,7 @@ def choose_match(task, config):
         # No input; just make a decision.
         if task.rec == autotag.RECOMMEND_STRONG:
             match = task.candidates[0]
-            show_change(task.cur_artist, task.cur_album, match, config.color)
+            show_change(config, task.cur_artist, task.cur_album, match, config.color)
             return match
         else:
             return _quiet_fall_back(config)
@@ -518,7 +519,7 @@ def choose_match(task, config):
     candidates, rec = task.candidates, task.rec
     while True:
         # Ask for a choice from the user.
-        choice = choose_candidate(candidates, False, rec, config.color,
+        choice = choose_candidate(config, candidates, False, rec, config.color,
                                   config.timid, task.cur_artist,
                                   task.cur_album, itemcount=len(task.items),
                                   per_disc_numbering=config.per_disc_numbering)
@@ -533,7 +534,7 @@ def choose_match(task, config):
             search_artist, search_album = manual_search(False)
             try:
                 _, _, candidates, rec = \
-                    autotag.tag_album(task.items, config.timid, search_artist,
+                    autotag.tag_album(config, task.items, config.timid, search_artist,
                                       search_album)
             except autotag.AutotagError:
                 candidates, rec = None, None
@@ -543,7 +544,7 @@ def choose_match(task, config):
             if search_id:
                 try:
                     _, _, candidates, rec = \
-                        autotag.tag_album(task.items, config.timid,
+                        autotag.tag_album(config, task.items, config.timid,
                                         search_id=search_id)
                 except autotag.AutotagError:
                     candidates, rec = None, None
@@ -565,14 +566,14 @@ def choose_item(task, config):
         # Quiet mode; make a decision.
         if rec == autotag.RECOMMEND_STRONG:
             match = candidates[0]
-            show_item_change(task.item, match, config.color)
+            show_item_change(config, task.item, match, config.color)
             return match
         else:
             return _quiet_fall_back(config)
 
     while True:
         # Ask for a choice.
-        choice = choose_candidate(candidates, True, rec, config.color,
+        choice = choose_candidate(config, candidates, True, rec, config.color,
                                   config.timid, item=task.item)
 
         if choice in (importer.action.SKIP, importer.action.ASIS):
@@ -582,13 +583,13 @@ def choose_item(task, config):
         elif choice == importer.action.MANUAL:
             # Continue in the loop with a new set of candidates.
             search_artist, search_title = manual_search(True)
-            candidates, rec = autotag.tag_item(task.item, config.timid,
+            candidates, rec = autotag.tag_item(config, task.item, config.timid,
                                                search_artist, search_title)
         elif choice == importer.action.MANUAL_ID:
             # Ask for a track ID.
             search_id = manual_id(True)
             if search_id:
-                candidates, rec = autotag.tag_item(task.item, config.timid,
+                candidates, rec = autotag.tag_item(config, task.item, config.timid,
                                                    search_id=search_id)
         else:
             # Chose a candidate.
@@ -628,7 +629,8 @@ def resolve_duplicate(task, config):
 
 def import_files(lib, paths, copy, move, write, autot, logpath, threaded,
                  color, delete, quiet, resume, quiet_fallback, singletons,
-                 timid, query, incremental, ignore, per_disc_numbering):
+                 timid, query, incremental, ignore, per_disc_numbering,
+                 strong_rec_thresh, medium_rec_thresh, rec_gap_thresh):
     """Import the files in the given list of paths, tagging each leaf
     directory as an album. If copy, then the files are copied into the
     library folder. If write, then new metadata is written to the files
@@ -698,6 +700,9 @@ def import_files(lib, paths, copy, move, write, autot, logpath, threaded,
             ignore = ignore,
             resolve_duplicate_func = resolve_duplicate,
             per_disc_numbering = per_disc_numbering,
+            strong_rec_thresh = strong_rec_thresh,
+            medium_rec_thresh = medium_rec_thresh,
+            rec_gap_thresh = rec_gap_thresh
         )
 
     finally:
@@ -773,7 +778,12 @@ def import_func(lib, config, opts, args):
     per_disc_numbering = ui.config_val(config, 'beets', 'per_disc_numbering',
                                        DEFAULT_PER_DISC_NUMBERING, bool)
 
-    # Resume has three options: yes, no, and "ask" (None).
+    strong_rec_thresh = ui.config_val(config, 'autotag', 'strong_rec_thresh', match.STRONG_REC_THRESH)
+    medium_rec_thresh = ui.config_val(config, 'autotag', 'medium_rec_thresh', match.MEDIUM_REC_THRESH)
+    rec_gap_thresh    = ui.config_val(config, 'autotag', 'rec_gap_thresh',    match.REC_GAP_THRESH)
+
+
+# Resume has three options: yes, no, and "ask" (None).
     resume = opts.resume if opts.resume is not None else \
         ui.config_val(config, 'beets', 'import_resume', DEFAULT_IMPORT_RESUME)
     if isinstance(resume, basestring):
@@ -803,7 +813,8 @@ def import_func(lib, config, opts, args):
 
     import_files(lib, paths, copy, move, write, autot, logpath, threaded,
                  color, delete, quiet, resume, quiet_fallback, singletons,
-                 timid, query, incremental, ignore, per_disc_numbering)
+                 timid, query, incremental, ignore, per_disc_numbering,
+                 strong_rec_thresh, medium_rec_thresh, rec_gap_thresh)
 import_cmd.func = import_func
 default_commands.append(import_cmd)
 

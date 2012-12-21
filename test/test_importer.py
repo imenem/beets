@@ -107,6 +107,9 @@ class NonAutotaggedImportTest(unittest.TestCase):
             ignore = [],
             resolve_duplicate_func = None,
             per_disc_numbering = False,
+            strong_rec_thresh = None,
+            medium_rec_thresh = None,
+            rec_gap_thresh = None
         )
 
         return paths

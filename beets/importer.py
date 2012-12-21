@@ -247,7 +247,8 @@ class ImportConfig(object):
                'choose_match_func', 'should_resume_func', 'threaded',
                'autot', 'singletons', 'timid', 'choose_item_func',
                'query', 'incremental', 'ignore',
-               'resolve_duplicate_func', 'per_disc_numbering']
+               'resolve_duplicate_func', 'per_disc_numbering',
+               'strong_rec_thresh', 'medium_rec_thresh', 'rec_gap_thresh']
     def __init__(self, **kwargs):
         for slot in self._fields:
             setattr(self, slot, kwargs[slot])
@@ -566,7 +567,7 @@ def initial_lookup(config):
 
         log.debug('Looking up: %s' % task.path)
         try:
-            task.set_candidates(*autotag.tag_album(task.items, config.timid))
+            task.set_candidates(*autotag.tag_album(config, task.items, config.timid))
         except autotag.AutotagError:
             task.set_null_candidates()
 
@@ -844,7 +845,7 @@ def item_lookup(config):
 
         plugins.send('import_task_start', task=task, config=config)
 
-        task.set_item_candidates(*autotag.tag_item(task.item, config.timid))
+        task.set_item_candidates(*autotag.tag_item(config, task.item, config.timid))
 
 def item_query(config):
     """A coroutine that queries the user for input on single-item

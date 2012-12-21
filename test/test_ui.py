@@ -470,7 +470,7 @@ class ImportTest(unittest.TestCase):
         self.assertRaises(ui.UserError, commands.import_files,
                           None, [], False, False, False, False, None,
                           False, False, False, True, False, None, False, True,
-                          None, False, [], False)
+                          None, False, [], False, None, None, None)
 
 class InputTest(unittest.TestCase):
     def setUp(self):
@@ -664,6 +664,7 @@ class ShowChangeTest(unittest.TestCase):
         info = info or self.info
         mapping = dict(zip(items, info.tracks))
         commands.show_change(
+            _common.iconfig(None),
             cur_artist,
             cur_album,
             autotag.AlbumMatch(0.1, info, mapping, set(), set()),
