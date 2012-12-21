@@ -178,10 +178,10 @@ class EncodingTest(unittest.TestCase):
         os.remove(self.path)
 
     def test_unicode_label_in_m4a(self):
-        self.mf.label = u'foo\xe8bar'
+        self.mf.label = u'foo\uc2b7bar'
         self.mf.save()
         new_mf = beets.mediafile.MediaFile(self.path)
-        self.assertEqual(new_mf.label, u'foo\xe8bar')
+        self.assertEqual(new_mf.label, u'foo\uc2b7bar')
 
 class ZeroLengthMediaFile(beets.mediafile.MediaFile):
     @property
