@@ -428,8 +428,8 @@ class MediaField(object):
     def _convert_encoding(self, str):
         try:
             encoded = str.encode("iso-8859-1")
-        except UnicodeEncodeError:
-            # Encoding is determined correctly by Mutagen
+        except (UnicodeEncodeError, # Encoding is determined correctly by Mutagen
+                AttributeError):    # Object has no method encode()
             return str
 
         charset = charade.detect(encoded)
