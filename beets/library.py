@@ -32,6 +32,7 @@ from beets import util
 from beets.util import bytestring_path, syspath, normpath, samefile,\
     displayable_path
 from beets.util.functemplate import Template
+from time import time
 
 MAX_FILENAME_LENGTH = 200
 
@@ -101,6 +102,8 @@ ITEM_FIELDS = [
     ('bitdepth',    'int',  False, True),
     ('channels',    'int',  False, True),
     ('mtime',       'int',  False, False),
+    ('created',     'int',  False, False),
+    ('updated',     'int',  False, False)
 ]
 ITEM_KEYS_WRITABLE = [f[0] for f in ITEM_FIELDS if f[3] and f[2]]
 ITEM_KEYS_META     = [f[0] for f in ITEM_FIELDS if f[3]]
@@ -139,6 +142,8 @@ ALBUM_FIELDS = [
     ('albumdisambig',      'text', True),
     ('rg_album_gain',      'real', True),
     ('rg_album_peak',      'real', True),
+    ('created',     'int',  False, False),
+    ('updated',     'int',  False, False)
 ]
 ALBUM_KEYS = [f[0] for f in ALBUM_FIELDS]
 ALBUM_KEYS_ITEM = [f[0] for f in ALBUM_FIELDS if f[2]]
@@ -1175,6 +1180,9 @@ class Library(BaseLibrary):
 
     def add(self, item, copy=False):
         item.library = self
+        item.created = int(time())
+        item.updated = int(time())
+
         if copy:
             self.move(item, copy=True)
 
@@ -1229,7 +1237,8 @@ class Library(BaseLibrary):
             # nothing to store (i.e., nothing was dirty)
             return
 
-        assignments = assignments[:-1]  # Knock off last ,
+        assignments += 'updated=?'
+        subvars.append(int(time()))
 
         # Finish the query.
         query = 'UPDATE items SET ' + assignments + ' WHERE id=?'
@@ -1388,6 +1397,9 @@ class Library(BaseLibrary):
         item_values = dict(
             (key, getattr(items[0], key)) for key in ALBUM_KEYS_ITEM)
 
+        item_values['created'] = int(time())
+        item_values['updated'] = int(time())
+
         with self.transaction() as tx:
             sql = 'INSERT INTO albums (%s) VALUES (%s)' % \
                 (', '.join(ALBUM_KEYS_ITEM),
@@ -1445,9 +1457,9 @@ class Album(BaseAlbum):
                 value = buffer(value)
 
             # Change album table.
-            sql = 'UPDATE albums SET %s=? WHERE id=?' % key
+            sql = 'UPDATE albums SET %s=?, updated=? WHERE id=?' % key
             with self._library.transaction() as tx:
-                tx.mutate(sql, (value, self.id))
+                tx.mutate(sql, (value, int(time()), self.id))
 
             # Possibly make modification on items as well.
             if key in ALBUM_KEYS_ITEM:

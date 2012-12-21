@@ -30,6 +30,7 @@ from beets.ui import commands
 from beets import autotag
 from beets import importer
 from beets.mediafile import MediaFile
+from time import sleep
 
 class ListTest(unittest.TestCase):
     def setUp(self):
@@ -167,6 +168,20 @@ class ModifyTest(unittest.TestCase):
         self.io.addinput('y')
         commands.modify_items(self.lib, mods, query,
                               write, move, album, True, True, None)
+
+    def test_item_modify_updated(self):
+        old = self.lib.items().next().updated
+        sleep(1)
+        self._modify(["title=newTitle"])
+        current = self.lib.items().next().updated
+        self.assertNotEqual(old, current)
+
+    def test_album_modify_updated(self):
+        old = self.lib.albums()[0].updated
+        sleep(1)
+        self._modify(["album=newAlbum"], album=True)
+        current = self.lib.albums()[0].updated
+        self.assertNotEqual(old, current)
 
     def test_modify_item_dbdata(self):
         self._modify(["title=newTitle"])
