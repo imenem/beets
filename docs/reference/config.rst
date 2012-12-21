@@ -248,6 +248,23 @@ appropriate to use ``import_move`` instead.
 
 .. _path-format-config:
 
+Autotag Configuration
+-------------------------
+
+You can configure the settings for distance between candidates and the original album tags.
+These settings appear under the ``[autotag]`` section (rather than the main ``[beets]``
+section we used above). At the moment, you can specify three thresholds for recommendations: ``strong_rec_thresh``
+for strong recommendation level for candidate, ``medium_rec_thresh`` for medium, and ``rec_gap_thresh``
+for minimum gap between first two candidates, if no candidates with strong or medium recommendation level.
+The defaults look like this::
+
+    [autotag]
+
+    strong_rec_thresh: 0.04
+    medium_rec_thresh: 0.25
+    rec_gap_thresh: 0.25
+
+
 Path Format Configuration
 -------------------------
 
