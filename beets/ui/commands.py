@@ -778,9 +778,9 @@ def import_func(lib, config, opts, args):
     per_disc_numbering = ui.config_val(config, 'beets', 'per_disc_numbering',
                                        DEFAULT_PER_DISC_NUMBERING, bool)
 
-    strong_rec_thresh = ui.config_val(config, 'autotag', 'strong_rec_thresh', match.STRONG_REC_THRESH)
-    medium_rec_thresh = ui.config_val(config, 'autotag', 'medium_rec_thresh', match.MEDIUM_REC_THRESH)
-    rec_gap_thresh    = ui.config_val(config, 'autotag', 'rec_gap_thresh',    match.REC_GAP_THRESH)
+    strong_rec_thresh = ui.config_val(config, 'autotag', 'strong_rec_thresh', match.STRONG_REC_THRESH, float)
+    medium_rec_thresh = ui.config_val(config, 'autotag', 'medium_rec_thresh', match.MEDIUM_REC_THRESH, float)
+    rec_gap_thresh    = ui.config_val(config, 'autotag', 'rec_gap_thresh',    match.REC_GAP_THRESH,    float)
 
 
 # Resume has three options: yes, no, and "ask" (None).

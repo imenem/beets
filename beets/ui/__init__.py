@@ -312,8 +312,7 @@ def input_yn(prompt, require=False, color=False):
 def config_val(config, section, name, default, vtype=None):
     """Queries the configuration file for a value (given by the section
     and name). If no value is present, returns default.  vtype
-    optionally specifies the return type (although only ``bool`` and
-    ``list`` are supported for now).
+    optionally specifies the return type.
     """
     if not config.has_section(section):
         config.add_section(section)
@@ -325,6 +324,8 @@ def config_val(config, section, name, default, vtype=None):
             # Whitespace-separated strings.
             strval = config.get(section, name, True)
             return strval.split()
+        elif vtype is not None:
+            return vtype(config.get(section, name, True))
         else:
             return config.get(section, name, True)
     except ConfigParser.NoOptionError:
