@@ -333,6 +333,8 @@ class MediaField(object):
         according to the provided StorageStyle. Store it as a
         single-item list if necessary.
         """
+        if val is unicode:
+            enforce_encoding = True
         # Wrap as a list if necessary.
         if style.list_elem:
             out = [val]
@@ -348,6 +350,9 @@ class MediaField(object):
                 found = False
                 for frame in frames:
                     if frame.desc.lower() == style.id3_desc.lower():
+                        # Set UTF-8 as frame encoding
+                        if enforce_encoding:
+                            frame.encoding = 3
                         setattr(frame, style.id3_frame_field, out)
                         found = True
                         break
