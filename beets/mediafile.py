@@ -335,6 +335,8 @@ class MediaField(object):
         """
         if val is unicode:
             enforce_encoding = True
+        else:
+            enforce_encoding = False
         # Wrap as a list if necessary.
         if style.list_elem:
             out = [val]
