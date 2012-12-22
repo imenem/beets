@@ -333,10 +333,7 @@ class MediaField(object):
         according to the provided StorageStyle. Store it as a
         single-item list if necessary.
         """
-        if val is unicode:
-            enforce_encoding = True
-        else:
-            enforce_encoding = False
+        enforce_encoding = (type(val) is unicode)
         # Wrap as a list if necessary.
         if style.list_elem:
             out = [val]
