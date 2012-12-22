@@ -440,8 +440,9 @@ class MediaField(object):
 
         try:
             return encoded.decode(charset['encoding'])
-        except (UnicodeDecodeError, # Encoding is determined incorrectly by Chardet
-                LookupError):       # Encoding determined by Chardet is not found
+        except (TypeError,          # Charade can not determines encoding
+                UnicodeDecodeError, # Encoding is determined incorrectly by Charade
+                LookupError):       # Encoding determined by Charade is not found
             return str
 
     def __set__(self, obj, val):
