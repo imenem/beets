@@ -173,6 +173,8 @@ def art_for_album(album, path, maxwidth=None, local_only=False):
     # Web art sources.
     if not local_only and not out:
         for url in _source_urls(album):
+            if url is None:
+                continue
             if maxwidth:
                 url = ArtResizer.shared.proxy_url(maxwidth, url)
             out = _fetch_image(url)
