@@ -11,7 +11,7 @@ from beets.plugins import BeetsPlugin
 from beets.autotag import hooks
 
 import discogs_client
-from discogs_client import Artist, Search, DiscogsAPIError
+from discogs_client import Artist, Release, Search, DiscogsAPIError
 
 discogs_client.user_agent = 'curl/7.28.0'
 
@@ -25,12 +25,14 @@ class DiscogsPlugin(BeetsPlugin):
 
         try:
             log.debug('Discog search for: ' + item['artist'] + ' - ' + item['album'])
-            albums = Search(item['artist'] + ' ' + item['album']).results()[0:5]
+            results = Search(item['artist'] + ' ' + item['album']).results()[0:5]
 
-            if not albums:
+            if not results:
                 artist, album, _ = basename(dirname(item['path'])).replace('_', ' ').split('-', 2)
                 log.debug('Discog search for: ' + artist + ' - ' + album)
-                albums = Search(artist + ' ' + album, 5).results()[0:5]
+                results = Search(artist + ' ' + album, 5).results()[0:5]
+
+            albums = filter(lambda result: isinstance(result, Release), results)
 
             return map(self._album_info, albums)
         except DiscogsAPIError as e:
