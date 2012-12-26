@@ -27,11 +27,11 @@ class ItunesPlugin(BeetsPlugin):
                 artist, album, _ = basename(dirname(item['path'])).replace('_', ' ').split('-', 2)
                 log.debug('iTunes search for: ' + artist + ' - ' + album)
                 albums = search_album(artist + ' ' + album, 5)
+
+            return map(self._album_info, albums)
         except ServiceException as e:
             log.error('iTunes search error: ' + e.get_type() + ': ' + e.get_message())
             return []
-
-        return map(self._album_info, albums)
 
     def _album_info(self, album):
         return hooks.AlbumInfo(
