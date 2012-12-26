@@ -93,7 +93,12 @@ class DiscogsPlugin(BeetsPlugin):
             if position.find('-') == -1:
                 position = '1-' + position                      # If no disk number, set to 1
 
-            return map(int, position.split('-'))
+            result = map(int, position.split('-'))
+
+            if len(result) == 2:
+                return result
+            else:
+                return 0, 0
         except ValueError:
             return 0, 0
 
