@@ -1,5 +1,5 @@
 """Adds iTunes album search support to the
-autotagger. Requires the pyitunes library.
+autotagger. Requires the python-itunes library.
 """
 from __future__ import absolute_import
 
@@ -9,7 +9,7 @@ import logging
 from beets.plugins import BeetsPlugin
 from beets.autotag import hooks
 
-from itunes import search_album
+from itunes import search_album, ServiceException
 
 log = logging.getLogger('beets')
 
@@ -19,11 +19,17 @@ class ItunesPlugin(BeetsPlugin):
     def candidates(self, items):
         item = items[0].record
 
-        albums = search_album(item['artist'] + ' ' + item['album'], 5)
+        try:
+            log.debug('iTunes search for: ' + item['artist'] + ' - ' + item['album'])
+            albums = search_album(item['artist'] + ' ' + item['album'], 5)
 
-        if not albums:
-            artist, album, _ = basename(dirname(item['path'])).replace('_', ' ').split('-', 2)
-            albums = search_album(artist + ' ' + album, 5)
+            if not albums:
+                artist, album, _ = basename(dirname(item['path'])).replace('_', ' ').split('-', 2)
+                log.debug('iTunes search for: ' + artist + ' - ' + album)
+                albums = search_album(artist + ' ' + album, 5)
+        except ServiceException as e:
+            log.error('iTunes search error: ' + e.get_type() + ': ' + e.get_message())
+            return []
 
         return map(self._album_info, albums)
 
