@@ -25,7 +25,6 @@ from unidecode import unidecode
 from beets import plugins
 from beets.util import levenshtein, plurality
 from beets.autotag import hooks
-from beets.ui import config_val
 
 # Distance parameters.
 # Text distance weights: proportions on the normalized intuitive edit
