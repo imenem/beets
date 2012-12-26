@@ -95,8 +95,7 @@ class DiscogsPlugin(BeetsPlugin):
 
             return map(int, position.split('-'))
         except ValueError:
-            print position
-            print original
+            return 0, 0
 
     def _duration(self, duration):
         try:
