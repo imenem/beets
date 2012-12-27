@@ -40,6 +40,9 @@ class DiscogsPlugin(BeetsPlugin):
             if not message.startswith('404'):
                 log.error('Discogs search error: ' + message)
             return []
+        except Exception as e:
+            log.error('Discogs search error: ' + str(e))
+            return []
 
     def _album_info(self, album):
         return hooks.AlbumInfo(

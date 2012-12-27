@@ -32,6 +32,9 @@ class ItunesPlugin(BeetsPlugin):
         except ServiceException as e:
             log.error('iTunes search error: ' + e.get_type() + ': ' + e.get_message())
             return []
+        except Exception as e:
+            log.error('iTunes search error: ' + str(e))
+            return []
 
     def _album_info(self, album):
         return hooks.AlbumInfo(
