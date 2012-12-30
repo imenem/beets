@@ -1,48 +1,28 @@
 """Adds Discogs album search support to the
 autotagger. Requires the discogs-client library.
 """
-import logging
 import string
 
-from os.path import dirname, basename
 from time import strptime
 
-from beets.plugins import BeetsPlugin
+from beetsplug.abstract_search import AbstractSearchPlugin
 from beets.autotag import hooks
 
 import discogs_client
-from discogs_client import Artist, Release, Search, DiscogsAPIError
+from discogs_client import Artist, Release, Search
 
 discogs_client.user_agent = 'curl/7.28.0'
 
-log = logging.getLogger('beets')
-
 # Plugin structure and autotagging logic.
 
-class DiscogsPlugin(BeetsPlugin):
-    def candidates(self, items):
-        item = items[0].record
+class DiscogsPlugin(AbstractSearchPlugin):
+    def __init__(self):
+        super(DiscogsPlugin, self).__init__()
 
-        try:
-            log.debug('Discog search for: ' + item['artist'] + ' - ' + item['album'])
-            results = Search(item['artist'] + ' ' + item['album']).results()[0:5]
-
-            if not results:
-                artist, album, _ = basename(dirname(item['path'])).replace('_', ' ').split('-', 2)
-                log.debug('Discog search for: ' + artist + ' - ' + album)
-                results = Search(artist + ' ' + album, 5).results()[0:5]
-
-            albums = filter(lambda result: isinstance(result, Release), results)
-
-            return map(self._album_info, albums)
-        except DiscogsAPIError as e:
-            message = str(e)
-            if not message.startswith('404'):
-                log.error('Discogs search error: ' + message)
-            return []
-        except Exception as e:
-            log.error('Discogs search error: ' + str(e))
-            return []
+    def _search(self, artist, album):
+        super(DiscogsPlugin, self)._search(artist, album)
+        albums = Search(artist + ' ' + album).results()[0:5]
+        return filter(lambda album: isinstance(album, Release), albums)
 
     def _album_info(self, album):
         return hooks.AlbumInfo(

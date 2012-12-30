@@ -3,38 +3,20 @@ autotagger. Requires the python-itunes library.
 """
 from __future__ import absolute_import
 
-from os.path import dirname, basename
-import logging
-
-from beets.plugins import BeetsPlugin
+from beetsplug.abstract_search import AbstractSearchPlugin
 from beets.autotag import hooks
 
-from itunes import search_album, ServiceException
-
-log = logging.getLogger('beets')
+from itunes import search_album
 
 # Plugin structure and autotagging logic.
 
-class ItunesPlugin(BeetsPlugin):
-    def candidates(self, items):
-        item = items[0].record
+class ItunesPlugin(AbstractSearchPlugin):
+    def __init__(self):
+        super(ItunesPlugin, self).__init__()
 
-        try:
-            log.debug('iTunes search for: ' + item['artist'] + ' - ' + item['album'])
-            albums = search_album(item['artist'] + ' ' + item['album'], 5)
-
-            if not albums:
-                artist, album, _ = basename(dirname(item['path'])).replace('_', ' ').split('-', 2)
-                log.debug('iTunes search for: ' + artist + ' - ' + album)
-                albums = search_album(artist + ' ' + album, 5)
-
-            return map(self._album_info, albums)
-        except ServiceException as e:
-            log.error('iTunes search error: ' + e.get_type() + ': ' + e.get_message())
-            return []
-        except Exception as e:
-            log.error('iTunes search error: ' + str(e))
-            return []
+    def _search(self, artist, album):
+        super(ItunesPlugin, self)._search(artist, album)
+        return search_album(artist + ' ' + album, 5)
 
     def _album_info(self, album):
         return hooks.AlbumInfo(
