@@ -9,7 +9,7 @@ from beetsplug.abstract_search import AbstractSearchPlugin
 from beets.autotag import hooks
 
 import discogs_client
-from discogs_client import Artist, Release, Search
+from discogs_client import Artist, Release, Search, DiscogsAPIError
 
 discogs_client.user_agent = 'curl/7.28.0'
 
@@ -21,8 +21,14 @@ class DiscogsPlugin(AbstractSearchPlugin):
 
     def _search(self, artist, album):
         super(DiscogsPlugin, self)._search(artist, album)
-        albums = Search(artist + ' ' + album).results()[0:5]
-        return filter(lambda album: isinstance(album, Release), albums)
+        try:
+            albums = Search(artist + ' ' + album).results()[0:5]
+            return filter(lambda album: isinstance(album, Release), albums)
+        except DiscogsAPIError as e:
+            if str(e).startswith('404'):
+                return []
+            else:
+                raise e
 
     def _album_info(self, album):
         return hooks.AlbumInfo(
